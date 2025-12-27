@@ -93,30 +93,32 @@ The correct implementation using Redis Lua scripting to ensure the check-and-del
 #### Code Snippet (Lua)
 ```lua
 -- DistributedLockWithLuaScript.java
-if redis.call('get', KEYS[1]) == ARGV[1] then
-    return redis.call('del', KEYS[1])
-else
-    return 0
+-- Demonstrates atomicity even with a deliberate 100ms delay
+redis.replicate_commands(); 
+local start = redis.call('TIME'); 
+local start_ms = (start[1] * 1000) + (start[2] / 1000); 
+while true do 
+    local now = redis.call('TIME'); 
+    local now_ms = (now[1] * 1000) + (now[2] / 1000); 
+    if (now_ms - start_ms) >= 100 then break end 
+end; 
+if redis.call('get', KEYS[1]) == ARGV[1] then 
+    return redis.call('del', KEYS[1]) 
+else 
+    return 0 
 end
 ```
 
 #### Run Scenario
 ```bash
 # Clean state, start, and follow logs
-docker compose --profile lua down && WORK_DURATION=1500 docker compose --profile lua up --build -d && docker compose logs -f app-lua
+docker compose --profile lua down && WORK_DURATION=950 docker compose --profile lua up --build -d && docker compose logs -f app-lua
 ```
-*Result: Lock safely released. No race conditions possible because Redis executes the script as a single atomic unit.*
+*Result: Lock safely released. Even with a 100ms delay **inside** the script, Redis remains blocked, making it impossible for another consumer to grab the lock during that window.*
 
 ---
 
 ## Project Guide
-
-### Troubleshooting Logs
-If you don't see logs after running a command:
-1.  **Remove `-d`**: Run without the detached flag to see output in real-time:
-    `WORK_DURATION=1500 docker compose --profile unsafe up --build`
-2.  **Check Service Names**: Ensure you are following the correct service (e.g., `app-unsafe`, `app-safe`, etc.).
-3.  **Wait for Redis**: On first run, Redis might take a few seconds to start. The apps are configured to retry acquisition, but logs might take a moment to appear.
 
 ### Project Structure
 ```

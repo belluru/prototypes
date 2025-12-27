@@ -33,6 +33,14 @@ public class DistributedLockWithLuaScript {
     // ARGV[1] = expected lock value
     // Returns: 1 if deleted (we owned it), 0 if didn't own it
     private static final String LUA_SCRIPT = 
+        "redis.replicate_commands(); " +
+        "local start = redis.call('TIME'); " +
+        "local start_ms = (start[1] * 1000) + (start[2] / 1000); " +
+        "while true do " +
+            "local now = redis.call('TIME'); " +
+            "local now_ms = (now[1] * 1000) + (now[2] / 1000); " +
+            "if (now_ms - start_ms) >= 100 then break end " +
+        "end; " +
         "if redis.call('get', KEYS[1]) == ARGV[1] then " +
             "return redis.call('del', KEYS[1]) " +
         "else " +
