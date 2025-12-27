@@ -34,6 +34,7 @@ public class DistributedLockWithTOCTOU {
         
         System.out.println("Application starting (with TOCTOU vulnerability)...");
         System.out.println("Work duration: " + workDurationMs + "ms, Lock TTL: " + LOCK_TTL_SECONDS + "s");
+        System.out.flush();
         
         JedisPool pool = new JedisPool(REDIS_HOST, 6379);
         ExecutorService executor = Executors.newFixedThreadPool(NUM_CONSUMERS);
@@ -55,9 +56,9 @@ public class DistributedLockWithTOCTOU {
                             Thread.sleep(200);
                         }
                     }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    System.err.println("Consumer " + consumerId + " interrupted.");
+                } catch (Exception e) {
+                    System.err.println("Consumer " + consumerId + " Error: " + e.getMessage());
+                    e.printStackTrace();
                 }
             });
         }
@@ -72,6 +73,7 @@ public class DistributedLockWithTOCTOU {
         
         pool.close();
         System.out.println("Application finished.");
+        System.out.flush();
     }
 
     private static boolean acquireLock(Jedis jedis, String lockValue) throws InterruptedException {
@@ -109,5 +111,6 @@ public class DistributedLockWithTOCTOU {
         } else {
             System.out.println("Lock NOT released - value mismatch (expected: " + lockValue + ", found: " + currentValue + ")");
         }
+        System.out.flush();
     }
 }

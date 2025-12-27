@@ -46,6 +46,7 @@ public class DistributedLockWithLuaScript {
         
         System.out.println("Application starting (with Lua script atomicity)...");
         System.out.println("Work duration: " + workDurationMs + "ms, Lock TTL: " + LOCK_TTL_SECONDS + "s");
+        System.out.flush();
         
         JedisPool pool = new JedisPool(REDIS_HOST, 6379);
         ExecutorService executor = Executors.newFixedThreadPool(NUM_CONSUMERS);
@@ -67,9 +68,9 @@ public class DistributedLockWithLuaScript {
                             Thread.sleep(200);
                         }
                     }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    System.err.println("Consumer " + consumerId + " interrupted.");
+                } catch (Exception e) {
+                    System.err.println("Consumer " + consumerId + " Error: " + e.getMessage());
+                    e.printStackTrace();
                 }
             });
         }
@@ -84,6 +85,7 @@ public class DistributedLockWithLuaScript {
         
         pool.close();
         System.out.println("Application finished.");
+        System.out.flush();
     }
 
     private static boolean acquireLock(Jedis jedis, String lockValue) throws InterruptedException {
@@ -112,5 +114,6 @@ public class DistributedLockWithLuaScript {
         } else {
             System.out.println("Lock NOT released - value mismatch (lock belongs to someone else).");
         }
+        System.out.flush();
     }
 }

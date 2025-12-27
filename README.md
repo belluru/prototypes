@@ -30,12 +30,14 @@ jedis.del(LOCK_KEY);  // Simple delete, no checking
 #### Run Scenarios
 **Scenario A: Success (Work < TTL)**
 ```bash
-WORK_DURATION=500 docker compose --profile unsafe up --build -d & sleep 3 && docker compose logs --tail=50
+# Start and follow logs specifically for the unsafe app
+WORK_DURATION=500 docker compose --profile unsafe up --build -d && docker compose logs -f app-unsafe
 ```
 
 **Scenario B: Race Condition (Work > TTL)**
 ```bash
-WORK_DURATION=1500 docker compose --profile unsafe up --build -d & sleep 5 && docker compose logs --tail=100
+# Start and follow logs specifically for the unsafe app
+WORK_DURATION=1500 docker compose --profile unsafe up --build -d && docker compose logs -f app-unsafe
 ```
 *Result: Consumer 1 deletes Consumer 2's lock.*
 
@@ -56,7 +58,7 @@ if (lockValue.equals(jedis.get(LOCK_KEY))) {  // Check
 
 #### Run Scenario
 ```bash
-WORK_DURATION=1500 docker compose --profile safe up --build -d & sleep 5 && docker compose logs --tail=100
+WORK_DURATION=1500 docker compose --profile safe up --build -d && docker compose logs -f app-safe
 ```
 *Result: Consumer 1 may still delete Consumer 2's lock if the TTL expires exactly between the check and delete, which is a TOCTOU vulnerability shown in case 3.*
 
@@ -77,7 +79,7 @@ if (lockValue.equals(currentValue)) {
 
 #### Run Scenario
 ```bash
-WORK_DURATION=1500 docker compose --profile toctou up --build -d & sleep 5 && docker compose logs --tail=100
+WORK_DURATION=1500 docker compose --profile toctou up --build -d && docker compose logs -f app-toctou
 ```
 *Evidence: Logs will show Consumer 2 acquiring the lock while Consumer 1 is "sleeping" inside the release method.*
 
@@ -98,13 +100,20 @@ end
 
 #### Run Scenario
 ```bash
-WORK_DURATION=1500 docker compose --profile lua up --build -d & sleep 5 && docker compose logs --tail=100
+WORK_DURATION=1500 docker compose --profile lua up --build -d && docker compose logs -f app-lua
 ```
 *Result: Lock safely released. No race conditions possible because Redis executes the script as a single atomic unit.*
 
 ---
 
 ## Project Guide
+
+### Troubleshooting Logs
+If you don't see logs after running a command:
+1.  **Remove `-d`**: Run without the detached flag to see output in real-time:
+    `WORK_DURATION=1500 docker compose --profile unsafe up --build`
+2.  **Check Service Names**: Ensure you are following the correct service (e.g., `app-unsafe`, `app-safe`, etc.).
+3.  **Wait for Redis**: On first run, Redis might take a few seconds to start. The apps are configured to retry acquisition, but logs might take a moment to appear.
 
 ### Project Structure
 ```

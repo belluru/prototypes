@@ -33,6 +33,7 @@ public class DistributedLock {
         
         System.out.println("Application starting...");
         System.out.println("Work duration: " + workDurationMs + "ms, Lock TTL: " + LOCK_TTL_SECONDS + "s");
+        System.out.flush();
         
         // Create a connection pool (thread-safe, reuses connections)
         JedisPool pool = new JedisPool(REDIS_HOST, 6379);
@@ -61,9 +62,9 @@ public class DistributedLock {
                             Thread.sleep(200);
                         }
                     }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    System.err.println("Consumer " + consumerId + " interrupted.");
+                } catch (Exception e) {
+                    System.err.println("Consumer " + consumerId + " Error: " + e.getMessage());
+                    e.printStackTrace();
                 }
             });
         }
@@ -80,6 +81,7 @@ public class DistributedLock {
         // Close the connection pool
         pool.close();
         System.out.println("Application finished.");
+        System.out.flush();
     }
 
     /**
@@ -106,5 +108,6 @@ public class DistributedLock {
     private static void releaseLock(Jedis jedis) {
         jedis.del(LOCK_KEY);
         System.out.println("Lock released successfully.");
+        System.out.flush();
     }
 }

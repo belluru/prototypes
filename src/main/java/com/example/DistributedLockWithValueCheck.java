@@ -33,6 +33,7 @@ public class DistributedLockWithValueCheck {
         
         System.out.println("Application starting (with value checking)...");
         System.out.println("Work duration: " + workDurationMs + "ms, Lock TTL: " + LOCK_TTL_SECONDS + "s");
+        System.out.flush();
         
         // Create a connection pool (thread-safe, reuses connections)
         JedisPool pool = new JedisPool(REDIS_HOST, 6379);
@@ -61,9 +62,9 @@ public class DistributedLockWithValueCheck {
                             Thread.sleep(200);
                         }
                     }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    System.err.println("Consumer " + consumerId + " interrupted.");
+                } catch (Exception e) {
+                    System.err.println("Consumer " + consumerId + " Error: " + e.getMessage());
+                    e.printStackTrace();
                 }
             });
         }
@@ -80,6 +81,7 @@ public class DistributedLockWithValueCheck {
         // Close the connection pool
         pool.close();
         System.out.println("Application finished.");
+        System.out.flush();
     }
 
     /**
@@ -114,5 +116,6 @@ public class DistributedLockWithValueCheck {
         } else {
             System.out.println("Lock NOT released - value mismatch (expected: " + lockValue + ", found: " + currentValue + ")");
         }
+        System.out.flush();
     }
 }
