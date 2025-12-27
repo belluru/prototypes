@@ -81,7 +81,7 @@ if (lockValue.equals(currentValue)) {
 #### Run Scenario
 ```bash
 # Clean state, start, and follow logs
-docker compose --profile toctou down && WORK_DURATION=1500 docker compose --profile toctou up --build -d && docker compose logs -f app-toctou
+docker compose --profile toctou down && WORK_DURATION=950 docker compose --profile toctou up --build -d && docker compose logs -f app-toctou
 ```
 *Evidence: Logs will show Consumer 2 acquiring the lock while Consumer 1 is "sleeping" inside the release method.*
 

@@ -107,7 +107,7 @@ public class DistributedLockWithTOCTOU {
             }
             
             jedis.del(LOCK_KEY);
-            System.out.println("Lock deleted (may have been someone else's!)");
+            System.out.println("Lock deleted by " + lockValue + " (may have been someone else's!)");
         } else {
             System.out.println("Lock NOT released - value mismatch (expected: " + lockValue + ", found: " + currentValue + ")");
         }
