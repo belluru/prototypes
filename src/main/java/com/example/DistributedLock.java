@@ -25,7 +25,6 @@ public class DistributedLock {
     private static final String REDIS_HOST = System.getenv().getOrDefault("REDIS_HOST", "localhost");
 
     public static void main(String[] args) {
-        System.out.println("REDIS_HOST: " + REDIS_HOST);
         System.out.println("Application starting...");
         
         // Create a connection pool (thread-safe, reuses connections)
