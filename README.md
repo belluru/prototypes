@@ -30,14 +30,14 @@ jedis.del(LOCK_KEY);  // Simple delete, no checking
 #### Run Scenarios
 **Scenario A: Success (Work < TTL)**
 ```bash
-# Start and follow logs specifically for the unsafe app
-WORK_DURATION=500 docker compose --profile unsafe up --build -d && docker compose logs -f app-unsafe
+# Clean state, start, and follow logs
+docker compose --profile unsafe down && WORK_DURATION=500 docker compose --profile unsafe up --build -d && docker compose logs -f app-unsafe
 ```
 
 **Scenario B: Race Condition (Work > TTL)**
 ```bash
-# Start and follow logs specifically for the unsafe app
-WORK_DURATION=1500 docker compose --profile unsafe up --build -d && docker compose logs -f app-unsafe
+# Clean state, start, and follow logs
+docker compose --profile unsafe down && WORK_DURATION=1500 docker compose --profile unsafe up --build -d && docker compose logs -f app-unsafe
 ```
 *Result: Consumer 1 deletes Consumer 2's lock.*
 
@@ -58,7 +58,8 @@ if (lockValue.equals(jedis.get(LOCK_KEY))) {  // Check
 
 #### Run Scenario
 ```bash
-WORK_DURATION=1500 docker compose --profile safe up --build -d && docker compose logs -f app-safe
+# Clean state, start, and follow logs
+docker compose --profile safe down && WORK_DURATION=1500 docker compose --profile safe up --build -d && docker compose logs -f app-safe
 ```
 *Result: Consumer 1 may still delete Consumer 2's lock if the TTL expires exactly between the check and delete, which is a TOCTOU vulnerability shown in case 3.*
 
@@ -79,7 +80,8 @@ if (lockValue.equals(currentValue)) {
 
 #### Run Scenario
 ```bash
-WORK_DURATION=1500 docker compose --profile toctou up --build -d && docker compose logs -f app-toctou
+# Clean state, start, and follow logs
+docker compose --profile toctou down && WORK_DURATION=1500 docker compose --profile toctou up --build -d && docker compose logs -f app-toctou
 ```
 *Evidence: Logs will show Consumer 2 acquiring the lock while Consumer 1 is "sleeping" inside the release method.*
 
@@ -100,7 +102,8 @@ end
 
 #### Run Scenario
 ```bash
-WORK_DURATION=1500 docker compose --profile lua up --build -d && docker compose logs -f app-lua
+# Clean state, start, and follow logs
+docker compose --profile lua down && WORK_DURATION=1500 docker compose --profile lua up --build -d && docker compose logs -f app-lua
 ```
 *Result: Lock safely released. No race conditions possible because Redis executes the script as a single atomic unit.*
 
