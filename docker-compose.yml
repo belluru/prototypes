@@ -29,3 +29,27 @@ services:
       - REDIS_HOST=redis
     command: ["${WORK_DURATION:-500}"]
     profiles: ["safe"]
+
+  app-toctou:
+    build:
+      context: .
+      args:
+        MAIN_CLASS: com.example.DistributedLockWithTOCTOU
+    depends_on:
+      - redis
+    environment:
+      - REDIS_HOST=redis
+    command: ["${WORK_DURATION:-500}"]
+    profiles: ["toctou"]
+
+  app-lua:
+    build:
+      context: .
+      args:
+        MAIN_CLASS: com.example.DistributedLockWithLuaScript
+    depends_on:
+      - redis
+    environment:
+      - REDIS_HOST=redis
+    command: ["${WORK_DURATION:-500}"]
+    profiles: ["lua"]
