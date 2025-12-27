@@ -11,16 +11,18 @@ This project is a simple prototype of a distributed lock implementation using Ja
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/your-username/distributed-locks.git
-   cd distributed-locks
+   git clone <repository-url>
+cd distributed-locks
    ```
 
 2. **Build and run the application:**
    ```bash
-   docker-compose up --build
-   ```
+docker compose up --build
+```
 
 This command will start a Redis container and an application container. The application will simulate 1000 consumers trying to acquire a distributed lock.
+
+**Note:** The application is a simulation that runs and then exits. The output you see in your console is the result of this simulation. You will see messages from different consumers acquiring and releasing the lock. After a few seconds, the application will finish and the `app` container will stop.
 
 ## How it Works
 
