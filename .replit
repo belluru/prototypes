@@ -1,0 +1,34 @@
+modules = ["java-graalvm22.3"]
+[agent]
+expertMode = true
+
+[nix]
+channel = "stable-25_05"
+packages = ["redis"]
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Distributed Lock Demo"
+
+[[workflows.workflow]]
+name = "Distributed Lock Demo"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "redis-server --daemonize yes && sleep 1 && java -jar target/distributed-lock-example-1.0-SNAPSHOT.jar"
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[ports]]
+localPort = 6379
+externalPort = 80
