@@ -56,7 +56,8 @@ public class DistributedLockWithLuaScript {
         System.out.println("Work duration: " + workDurationMs + "ms, Lock TTL: " + LOCK_TTL_SECONDS + "s");
         System.out.flush();
         
-        JedisPool pool = new JedisPool(REDIS_HOST, 6379);
+        // Create a connection pool with increased timeout (5000ms) to accommodate deliberate Lua delays
+        JedisPool pool = new JedisPool(new redis.clients.jedis.JedisPoolConfig(), REDIS_HOST, 6379, 5000);
         ExecutorService executor = Executors.newFixedThreadPool(NUM_CONSUMERS);
 
         for (int i = 0; i < NUM_CONSUMERS; i++) {
