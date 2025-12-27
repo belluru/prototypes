@@ -46,21 +46,26 @@ java -jar target/distributed-lock-example-1.0-SNAPSHOT.jar
 
 ## How It Works
 
-### Concurrent Execution with Thread Pool
+### Concurrent Execution with Thread Pool & Connection Pooling
 
-The code uses `ExecutorService` to run multiple consumer threads concurrently:
+The code uses:
+- **ExecutorService** - manages 5 consumer threads concurrently
+- **JedisPool** - reuses Redis connections across threads (thread-safe)
 
 ```java
+JedisPool pool = new JedisPool(REDIS_HOST, 6379);
 ExecutorService executor = Executors.newFixedThreadPool(NUM_CONSUMERS);
 executor.submit(() -> {
-    // Consumer logic runs in a separate thread
+    try (Jedis jedis = pool.getResource()) {
+        // Consumer logic runs in a separate thread
+    }
 });
 ```
 
-**Why `executor.submit()`?**
-- Manages threads efficiently without creating/destroying new ones
-- Enables true concurrent execution (all 5 consumers run simultaneously)
-- `CountDownLatch` coordinates when all consumers finish
+**Benefits:**
+- Thread pool manages 5 threads efficiently without creating/destroying new ones
+- Connection pooling reuses connections instead of creating new ones for each consumer
+- `executor.awaitTermination()` waits for all consumers to finish
 
 ### Lock Acquisition & Release
 

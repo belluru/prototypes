@@ -4,6 +4,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.params.SetParams;
 
 
@@ -27,6 +28,9 @@ public class DistributedLock {
         System.out.println("REDIS_HOST: " + REDIS_HOST);
         System.out.println("Application starting...");
         
+        // Create a connection pool (thread-safe, reuses connections)
+        JedisPool pool = new JedisPool(REDIS_HOST, 6379);
+        
         // Create a thread pool with NUM_CONSUMERS threads
         ExecutorService executor = Executors.newFixedThreadPool(NUM_CONSUMERS);
 
@@ -35,10 +39,8 @@ public class DistributedLock {
 
             // Submit consumer task to thread pool for concurrent execution
             executor.submit(() -> {
-                Jedis jedis = null;
                 String lockValue = "consumer-" + consumerId;
-                try {
-                    jedis = new Jedis(REDIS_HOST, 6379);
+                try (Jedis jedis = pool.getResource()) {
                     // Keep retrying until lock is acquired
                     while (true) {
                         if (acquireLock(jedis, lockValue)) {
@@ -56,10 +58,6 @@ public class DistributedLock {
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     System.err.println("Consumer " + consumerId + " interrupted.");
-                } finally {
-                    if (jedis != null) {
-                        jedis.close();
-                    }
                 }
             });
         }
@@ -72,6 +70,9 @@ public class DistributedLock {
             Thread.currentThread().interrupt();
             System.err.println("Main thread interrupted while waiting for consumers.");
         }
+        
+        // Close the connection pool
+        pool.close();
         System.out.println("Application finished.");
     }
 
