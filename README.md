@@ -19,6 +19,11 @@ Work duration is 500ms, which is less than the 1 second lock TTL:
 docker compose up --build -d & sleep 3 && docker compose logs --tail=50
 ```
 
+Or explicitly pass the work duration:
+```bash
+WORK_DURATION=500 docker compose up --build -d & sleep 3 && docker compose logs --tail=50
+```
+
 **Expected behavior:**
 ```
 Work duration: 500ms, Lock TTL: 1s
@@ -37,15 +42,9 @@ All consumers safely acquire and release locks because they complete before TTL 
 ### Race Condition Scenario (Lock Expiry During Release)
 Work duration is 1500ms, which exceeds the 1 second lock TTL.
 
-Edit `docker-compose.yml` and change the command:
-```yaml
-app:
-  command: ["1500"]
-```
-
-Then run:
+Pass the work duration as an environment variable:
 ```bash
-docker compose up --build -d & sleep 5 && docker compose logs --tail=100
+WORK_DURATION=1500 docker compose up --build -d & sleep 5 && docker compose logs --tail=100
 ```
 
 **What happens:**

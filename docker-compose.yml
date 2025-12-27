@@ -12,4 +12,4 @@ services:
       - redis
     environment:
       - REDIS_HOST=redis
-    command: ["500"]
+    command: ["${WORK_DURATION:-500}"]
