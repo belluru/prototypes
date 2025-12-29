@@ -8,9 +8,6 @@ import java.sql.SQLException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
-import javax.sql.DataSource;
 
 public class App {
     private static final String DB_URL = System.getenv("DB_URL") != null ? 
@@ -21,13 +18,10 @@ public class App {
     private static final String SELECT_QUERY = System.getenv("SELECT_QUERY") != null ? 
             System.getenv("SELECT_QUERY") : "SELECT seat_id FROM seats WHERE passenger_id IS NULL LIMIT 1";
 
-    private static DataSource dataSource;
-
     public static void main(String[] args) {
         System.out.println("Starting Seat Reservation Simulation...");
         System.out.println("Using Query: " + SELECT_QUERY);
 
-        initializeDataSource();
         waitForDatabase();
         
         long startTime = System.currentTimeMillis();
@@ -54,7 +48,7 @@ public class App {
     }
 
     private static void reserveSeat(int passengerId, String passengerName) {
-        try (Connection conn = dataSource.getConnection()) {
+        try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD)) {
             // 1. Find an available seat using the configured query
             int seatId = -1;
             try (PreparedStatement pstmt = conn.prepareStatement(SELECT_QUERY);
@@ -94,7 +88,7 @@ public class App {
     }
 
     private static void printSummary() {
-        try (Connection conn = dataSource.getConnection()) {
+        try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD)) {
             System.out.println("\n--- Final Seat Assignments ---");
             String sql = "SELECT s.seat_id, p.id as passenger_id, p.name FROM seats s LEFT JOIN passengers p ON s.passenger_id = p.id ORDER BY s.seat_id";
             try (PreparedStatement pstmt = conn.prepareStatement(sql);
@@ -140,25 +134,13 @@ public class App {
         }
     }
 
-    private static void initializeDataSource() {
-        HikariConfig config = new HikariConfig();
-        config.setJdbcUrl(DB_URL);
-        config.setUsername(DB_USER);
-        config.setPassword(DB_PASSWORD);
-        config.setMaximumPoolSize(20);
-        config.setMinimumIdle(5);
-        config.addDataSourceProperty("cachePrepStmts", "true");
-        config.addDataSourceProperty("prepStmtCacheSize", "250");
-        config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
-        dataSource = new HikariDataSource(config);
-    }
-
     private static void waitForDatabase() {
         int maxRetries = 30;
         long delayMs = 2000;
         System.out.println("Waiting for database connection...");
+        // Ideally we would have a DB pool of connections.
         for (int i = 0; i < maxRetries; i++) {
-            try (Connection conn = dataSource.getConnection()) {
+            try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD)) {
                 System.out.println("Database connection established.");
                 return;
             } catch (SQLException e) {
