@@ -67,6 +67,7 @@ services:
       - redis
     environment:
       - REDIS_HOST=redis
+      - NUM_CONSUMERS=${NUM_CONSUMERS:-5}
     command: ["${WORK_DURATION:-500}"]
     profiles: ["lua"]
 
@@ -83,5 +84,6 @@ services:
       - redis-5
     environment:
       - REDIS_NODES=redis-1:6379,redis-2:6379,redis-3:6379,redis-4:6379,redis-5:6379
+      - NUM_CONSUMERS=${NUM_CONSUMERS:-5}
     command: ["${WORK_DURATION:-950}"]
     profiles: ["redlock"]

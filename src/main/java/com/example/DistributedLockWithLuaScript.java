@@ -24,7 +24,7 @@ public class DistributedLockWithLuaScript {
 
     private static final String LOCK_KEY = "my-distributed-lock";
     private static final int LOCK_TTL_SECONDS = 1;
-    private static final int NUM_CONSUMERS = 5;
+    private static int numConsumers = 5;
     private static final String REDIS_HOST = System.getenv().getOrDefault("REDIS_HOST", "localhost");
     private static long workDurationMs = 500;
     
@@ -43,15 +43,18 @@ public class DistributedLockWithLuaScript {
             workDurationMs = Long.parseLong(args[0]);
         }
         
+        numConsumers = Integer.parseInt(System.getenv().getOrDefault("NUM_CONSUMERS", "5"));
+        long startTime = System.currentTimeMillis();
+
         System.out.println("Application starting (with Lua script atomicity)...");
-        System.out.println("Work duration: " + workDurationMs + "ms, Lock TTL: " + LOCK_TTL_SECONDS + "s");
+        System.out.println("Consumers: " + numConsumers + ", Work duration: " + workDurationMs + "ms, Lock TTL: " + LOCK_TTL_SECONDS + "s");
         System.out.flush();
         
         // Create a connection pool with 10s timeout to accommodate deliberate blocking
         JedisPool pool = new JedisPool(new redis.clients.jedis.JedisPoolConfig(), REDIS_HOST, 6379, 10000);
-        ExecutorService executor = Executors.newFixedThreadPool(NUM_CONSUMERS);
+        ExecutorService executor = Executors.newFixedThreadPool(numConsumers);
 
-        for (int i = 0; i < NUM_CONSUMERS; i++) {
+        for (int i = 0; i < numConsumers; i++) {
             int consumerId = i;
 
             executor.submit(() -> {
@@ -84,7 +87,9 @@ public class DistributedLockWithLuaScript {
         }
         
         pool.close();
+        long endTime = System.currentTimeMillis();
         System.out.println("Application finished.");
+        System.out.println("TOTAL_TIME_MS: " + (endTime - startTime));
         System.out.flush();
     }
 
