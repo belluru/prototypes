@@ -30,16 +30,13 @@ You can override the `SELECT_QUERY` via command line. It's best to `export` the 
 
 ```bash
 # 1. Standard (Race Condition) - Default
-export SELECT_QUERY="SELECT seat_id FROM seats WHERE passenger_id IS NULL LIMIT 1"
-docker compose down -v && docker compose up --build -d && docker compose logs -f app
+docker compose down -v && SELECT_QUERY="SELECT seat_id FROM seats WHERE passenger_id IS NULL LIMIT 1" docker compose up --build -d && docker compose logs -f app
 
 # 2. SELECT ... FOR UPDATE (Safety with performance trade-off)
-export SELECT_QUERY="SELECT seat_id FROM seats WHERE passenger_id IS NULL LIMIT 1 FOR UPDATE"
-docker compose down -v && docker compose up --build -d && docker compose logs -f app
+docker compose down -v && SELECT_QUERY="SELECT seat_id FROM seats WHERE passenger_id IS NULL LIMIT 1 FOR UPDATE" docker compose up --build -d && docker compose logs -f app
 
 # 3. SELECT ... FOR UPDATE SKIP LOCKED (High performance and safety)
-export SELECT_QUERY="SELECT seat_id FROM seats WHERE passenger_id IS NULL LIMIT 1 FOR UPDATE SKIP LOCKED"
-docker compose down -v && docker compose up --build -d && docker compose logs -f app
+docker compose down -v && SELECT_QUERY="SELECT seat_id FROM seats WHERE passenger_id IS NULL LIMIT 1 FOR UPDATE SKIP LOCKED" docker compose up --build -d && docker compose logs -f app
 ```
 
 ### Locking Strategies Explained
