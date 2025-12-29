@@ -18,10 +18,9 @@ public class App {
     private static String selectQuery = "SELECT seat_id FROM seats WHERE passenger_id IS NULL LIMIT 1";
 
     public static void main(String[] args) {
+        System.out.println("Arguments: " + String.join(", ", args));
         if (args.length > 0 && !args[0].trim().isEmpty()) {
             selectQuery = args[0];
-        } else if (System.getenv("SELECT_QUERY") != null && !System.getenv("SELECT_QUERY").trim().isEmpty()) {
-            selectQuery = System.getenv("SELECT_QUERY");
         }
 
         System.out.println("Starting Seat Reservation Simulation...");

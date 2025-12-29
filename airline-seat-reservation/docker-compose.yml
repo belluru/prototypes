@@ -29,5 +29,4 @@ services:
       DB_URL: jdbc:mysql://mysql:3306/airline?allowPublicKeyRetrieval=true&useSSL=false
       DB_USER: root
       DB_PASSWORD: rootpassword
-      SELECT_QUERY: ${SELECT_QUERY:-SELECT seat_id FROM seats WHERE passenger_id IS NULL LIMIT 1}
     command: ["${SELECT_QUERY:-SELECT seat_id FROM seats WHERE passenger_id IS NULL LIMIT 1}"]
