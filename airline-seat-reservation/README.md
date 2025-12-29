@@ -38,6 +38,18 @@ SELECT_QUERY="SELECT seat_id FROM seats WHERE passenger_id IS NULL LIMIT 1 FOR U
 SELECT_QUERY="SELECT seat_id FROM seats WHERE passenger_id IS NULL LIMIT 1 FOR UPDATE SKIP LOCKED" docker compose up --build -d && docker compose logs -f app
 ```
 
+### Locking Strategies Explained
+
+- **Standard (`SELECT ...`)**:
+    - **Behavior**: Does not acquire any locks. Multiple threads can read the same row simultaneously.
+    - **Result**: High performance but prone to **race conditions**. Two passengers will find the same seat "empty" and both will try to reserve it.
+- **Locking (`FOR UPDATE`)**:
+    - **Behavior**: Acquires an exclusive lock on the selected rows. Other threads attempting to `SELECT ... FOR UPDATE` on the same rows will **block** (wait) until the lock is released (at the end of the transaction).
+    - **Result**: Ensures **consistency** (no double-booking) but reduces concurrency. Threads wait in a queue, increasing total execution time.
+- **High Concurrency (`FOR UPDATE SKIP LOCKED`)**:
+    - **Behavior**: Acquires an exclusive lock on the selected rows but **skips** any rows that are already locked by another transaction.
+    - **Result**: Provides both **consistency** and **high performance**. Threads don't wait for each other; they simply move on to the next available seat. This is the ideal strategy for hot-seat reservation systems.
+
 ### Metrics & Reconciliation
 At the end of the simulation, the application will output:
 - **Total time taken**: The duration for all 100 passengers to attempt their reservation.
