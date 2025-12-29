@@ -15,7 +15,7 @@ public class App {
     private static final String DB_USER = System.getenv("DB_USER") != null ? System.getenv("DB_USER") : "root";
     private static final String DB_PASSWORD = System.getenv("DB_PASSWORD") != null ? System.getenv("DB_PASSWORD") : "rootpassword";
 
-    private static final String SELECT_QUERY = System.getenv("SELECT_QUERY") != null ? 
+    private static final String SELECT_QUERY = (System.getenv("SELECT_QUERY") != null && !System.getenv("SELECT_QUERY").trim().isEmpty()) ? 
             System.getenv("SELECT_QUERY") : "SELECT seat_id FROM seats WHERE passenger_id IS NULL LIMIT 1";
 
     public static void main(String[] args) {
