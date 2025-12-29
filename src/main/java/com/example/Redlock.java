@@ -64,7 +64,7 @@ public class Redlock {
                             System.out.println("Consumer " + consumerId + " acquired the lock (Quorum reached).");
                             Thread.sleep(workDurationMs);
                             System.out.println("Consumer " + consumerId + " attempting to release the lock.");
-                            releaseRedlock(lockValue);
+                            releaseRedlock(lockValue, true);
                             break;
                         } catch (InterruptedException e) {
                             Thread.currentThread().interrupt();
@@ -113,14 +113,18 @@ public class Redlock {
             return true;
         } else {
             // Failed to reach quorum, release partial locks
-            releaseRedlock(lockValue);
+            releaseRedlock(lockValue, false);
             return false;
         }
     }
 
-    private static void releaseRedlock(String lockValue) {
+    private static void releaseRedlock(String lockValue, boolean printValue) {
         for (JedisPool pool : POOLS) {
             try (Jedis jedis = pool.getResource()) {
+                if (printValue) {
+                    System.out.println("Current lockValue on node: " + jedis.get(LOCK_KEY) + ", Releasing: " + lockValue);
+                }
+
                 jedis.eval(LUA_SCRIPT, 1, LOCK_KEY, lockValue);
             } catch (Exception e) {
                 // Node might be down, continue to next node
