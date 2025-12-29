@@ -49,38 +49,47 @@ public class App {
 
     private static void reserveSeat(int passengerId, String passengerName) {
         try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD)) {
-            // 1. Find an available seat using the configured query
-            int seatId = -1;
-            try (PreparedStatement pstmt = conn.prepareStatement(SELECT_QUERY);
-                 ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    seatId = rs.getInt("seat_id");
-                }
-            }
-
-            if (seatId != -1) {
-                // Simulate race condition window
-                Thread.sleep(100);
-
-                // 2. Assign the seat to the passenger
-                String assignSeatSql = "UPDATE seats SET passenger_id = ? WHERE seat_id = ?";
-                try (PreparedStatement pstmt = conn.prepareStatement(assignSeatSql)) {
-                    pstmt.setInt(1, passengerId);
-                    pstmt.setInt(2, seatId);
-                    pstmt.executeUpdate();
+            // Enable transaction to make FOR UPDATE effective
+            conn.setAutoCommit(false);
+            try {
+                // 1. Find an available seat using the configured query
+                int seatId = -1;
+                try (PreparedStatement pstmt = conn.prepareStatement(SELECT_QUERY);
+                     ResultSet rs = pstmt.executeQuery()) {
+                    if (rs.next()) {
+                        seatId = rs.getInt("seat_id");
+                    }
                 }
 
-                // 3. Update the passenger table
-                String updatePassengerSql = "UPDATE passengers SET seat_number = ? WHERE id = ?";
-                try (PreparedStatement pstmt = conn.prepareStatement(updatePassengerSql)) {
-                    pstmt.setInt(1, seatId);
-                    pstmt.setInt(2, passengerId);
-                    pstmt.executeUpdate();
-                }
+                if (seatId != -1) {
+                    // Simulate race condition window
+                    Thread.sleep(100);
 
-                System.out.println(passengerName + " reserved seat: " + seatId);
-            } else {
-                System.out.println("No seats available for " + passengerName);
+                    // 2. Assign the seat to the passenger
+                    String assignSeatSql = "UPDATE seats SET passenger_id = ? WHERE seat_id = ?";
+                    try (PreparedStatement pstmt = conn.prepareStatement(assignSeatSql)) {
+                        pstmt.setInt(1, passengerId);
+                        pstmt.setInt(2, seatId);
+                        pstmt.executeUpdate();
+                    }
+
+                    // 3. Update the passenger table
+                    String updatePassengerSql = "UPDATE passengers SET seat_number = ? WHERE id = ?";
+                    try (PreparedStatement pstmt = conn.prepareStatement(updatePassengerSql)) {
+                        pstmt.setInt(1, seatId);
+                        pstmt.setInt(2, passengerId);
+                        pstmt.executeUpdate();
+                    }
+
+                    conn.commit();
+                    System.out.println(passengerName + " reserved seat: " + seatId);
+                } else {
+                    conn.rollback();
+                    System.out.println("No seats available for " + passengerName);
+                }
+            } catch (Exception e) {
+                conn.rollback();
+                throw e;
             }
         } catch (SQLException | InterruptedException e) {
             System.err.println("Error for " + passengerName + ": " + e.getMessage());
