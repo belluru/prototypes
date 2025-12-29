@@ -122,10 +122,12 @@ public class Redlock {
         for (JedisPool pool : POOLS) {
             try (Jedis jedis = pool.getResource()) {
                 if (printValue) {
-                    System.out.println("Current lockValue on node: " + jedis.get(LOCK_KEY) + ", Consumer trying to release: " + lockValue +". Lua script checks if the lockValue matches the consumer's ID before deleting, these deletes most probably will fail.");
+                    System.out.println("Current lockValue on node: " + jedis.get(LOCK_KEY) + ", Consumer trying to release: " + lockValue + ". Lua script checks if the lockValue matches the consumer's ID before deleting.");
                 }
-
-                jedis.eval(LUA_SCRIPT, 1, LOCK_KEY, lockValue);
+                Object result = jedis.eval(LUA_SCRIPT, 1, LOCK_KEY, lockValue);
+                if (printValue) {
+                    System.out.println("Lua Release Result: " + result + " (1=success, 0=failure)");
+                }
             } catch (Exception e) {
                 // Node might be down, continue to next node
             }

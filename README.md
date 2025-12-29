@@ -146,6 +146,8 @@ docker compose --profile redlock down && WORK_DURATION=950 docker compose --prof
 ```
 *Result: Consumers acquire the lock only when they reach a quorum. High availability is achieved by distributing the lock state across multiple independent Redis instances.*
 
+Play around with duration more than TTL such as 1500ms to see the effect of quorum. Delete is atomic, so we should not encounter race conditions.
+
 This will take more time to acquire the lock compared to the single node version, because it needs to acquire the lock from 3 out of 5 nodes, but that is the tradeoff we make for high availability. So, low throughputs are expected, but availability is high.
 
 ---
