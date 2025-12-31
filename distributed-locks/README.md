@@ -148,6 +148,26 @@ docker compose --profile redlock down && WORK_DURATION=950 docker compose --prof
 
 Play around with duration more than TTL such as 1500ms to see the effect of quorum. Delete is atomic, so we should not encounter race conditions.
 
+---
+
+### Redlock Vulnerability Demos (Controlled Simulations)
+
+These demos are specifically designed to replicate the safety failures discussed in the [Paxos Guide](file:///Users/ellurubharath/Documents/Coding/prototypes/distributed-locks/PAXOS_README.md).
+
+#### 1. GC Pause Vulnerability
+Simulates Client A acquiring the lock and then hitting a long pause. Client B takes over, and when Client A wakes up, both are in the critical section!
+```bash
+docker compose --profile redlock-gc up --build
+```
+
+#### 2. Clock Drift Vulnerability
+Simulates a quorum of nodes (3/5) having their clocks jump forward, causing keys to expire early. Client B acquires the lock while Client A still thinks it holds it.
+```bash
+docker compose --profile redlock-drift up --build
+```
+
+---
+
 ### 6. Paxos Version (Consensus-based, Production Grade)
 A distributed lock implementation using a simplified Paxos consensus algorithm to address Redlock's limitations regarding clock synchronization and process pauses.
 

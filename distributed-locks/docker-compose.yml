@@ -94,3 +94,33 @@ services:
       args:
         MAIN_CLASS: com.example.paxos.PaxosDemo
     profiles: ["paxos"]
+
+  app-redlock-gc:
+    build:
+      context: .
+      args:
+        MAIN_CLASS: com.example.RedlockGCPauseDemo
+    depends_on:
+      - redis-1
+      - redis-2
+      - redis-3
+      - redis-4
+      - redis-5
+    environment:
+      - REDIS_NODES=redis-1:6379,redis-2:6379,redis-3:6379,redis-4:6379,redis-5:6379
+    profiles: ["redlock-gc"]
+
+  app-redlock-drift:
+    build:
+      context: .
+      args:
+        MAIN_CLASS: com.example.RedlockClockDriftDemo
+    depends_on:
+      - redis-1
+      - redis-2
+      - redis-3
+      - redis-4
+      - redis-5
+    environment:
+      - REDIS_NODES=redis-1:6379,redis-2:6379,redis-3:6379,redis-4:6379,redis-5:6379
+    profiles: ["redlock-drift"]
