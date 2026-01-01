@@ -1,6 +1,15 @@
 # Distributed Lock Prototype
 
-A Java prototype demonstrating distributed lock implementation with Redis. This project explores the progression from simple, unsafe locks to production-ready atomic operations using lua scripts and runs a benchmark to compare the performance of different implementations.
+A Java prototype demonstrating the evolution of distributed locks, from simple Redis implementations to strictly-safe consensus-based systems.
+
+## 🎓 Learning Path
+
+For a progressive understanding of distributed locking, follow the documentation in this order:
+
+1.  **[Single-Node Redis Locks](#implementations--scenarios)**: Basics of `SETNX`, atomicity issues (TOCTOU), and the modern Lua solution.
+2.  **[5-Node Redis (Redlock)](#5-redlock-version-multi-node-high-availability)**: Achieving High Availability for the lock itself.
+3.  **[Redlock's Vulnerabilities](#redlock-vulnerability-demos-controlled-simulations)**: Hands-on demos of Clock Drift and GC Pauses that break Redlock.
+4.  **[The Paxos Solution (Consensus)](#6-paxos-version-consensus-based-production-grade)**: How logical time and fencing tokens provide strict safety. **[Deep Dive here](file:///Users/ellurubharath/Documents/Coding/prototypes/distributed-locks/PAXOS_README.md)**.
 
 ## Core Technical Details
 
@@ -183,27 +192,35 @@ docker compose --profile paxos up --build
 
 **[Read the Detailed Paxos Guide](file:///Users/ellurubharath/Documents/Coding/prototypes/distributed-locks/PAXOS_README.md)** for a deep dive into Redlock limitations and the Paxos solution.
 
+> [!NOTE]
+> For a theoretical deep dive into why Redlock is often considered insufficient for strict safety, see Martin Kleppmann's seminal article: [How to do distributed locking](https://martin.kleppmann.com/2016/02/08/how-to-do-distributed-locking.html).
+
 ---
 
-## Performance Benchmarking
-...
-...
-...
+## Project Guide
+
+### Project Structure
+```
 ├── src/main/java/com/example/
-│   ├── ...
-│   └── paxos/                          # Paxos Implementation
-│       ├── FencingToken.java
-│       ├── PaxosNode.java
-│       ├── PaxosLock.java
-│       └── PaxosDemo.java
-├── PAXOS_README.md                       # Detailed Paxos docs
+│   ├── DistributedLock.java              # 1. Unsafe
+│   ├── DistributedLockWithValueCheck.java# 2. Safe (Non-atomic)
+│   ├── DistributedLockWithTOCTOU.java    # 3. TOCTOU Demo
+│   ├── DistributedLockWithLuaScript.java # 4. Lua (Atomic)
+│   ├── Redlock.java                      # 5. Redlock HA
+│   ├── RedlockGCPauseDemo.java           # 6a. GC Pause Demo
+│   ├── RedlockClockDriftDemo.java        # 6b. Clock Drift Demo
+│   └── paxos/                            # 7. Paxos Implementation
+│       └── PaxosDemo.java                # Consolidated Protocol & Demo
+├── PAXOS_README.md                       # Detailed Paxos & Safety docs
+├── docker-compose.yml                    # Service profiles for all demos
 ├── Dockerfile                            # Multi-stage build
-...
+└── pom.xml                               # Maven config
+```
 
 ### Docker Profiles
 Run specific versions using profiles:
 ```bash
-docker compose --profile [unsafe|safe|toctou|lua|redlock] up --build
+docker compose --profile [unsafe|safe|toctou|lua|redlock|redlock-gc|redlock-drift|paxos] up --build
 ```
 
 ---
@@ -214,3 +231,4 @@ docker compose --profile [unsafe|safe|toctou|lua|redlock] up --build
 2.  **Atomicity is requirements**: Even with value checking, non-atomic operations are vulnerable (TOCTOU).
 3.  **Lua scripts are the standard**: For single-instance Redis, Lua scripts are the simplest way to achieve atomicity for complex operations.
 4.  **Production Readiness**: In production, consider robust libraries like Redisson (which implements Redlock) for distributed locks.
+5.  **Fencing Tokens for Safety**: Note that Redis does not have a native way to generate monotonically increasing fencing tokens. While fencing tokens are the standard way to resolve GC pause vulnerabilities, you must implement a system (like the Paxos prototype) to generate and validate them.

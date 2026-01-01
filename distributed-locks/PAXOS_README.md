@@ -4,6 +4,8 @@ This directory contains a prototype of a distributed lock implemented using a co
 
 ## Why Redlock is Not Enough
 
+This analysis and the following prototype are largely based on the critical analysis by Martin Kleppmann in his article [How to do distributed locking](https://martin.kleppmann.com/2016/02/08/how-to-do-distributed-locking.html).
+
 Redlock (and similar TTL-based locks) relies on **physical time** for safety. In distributed systems, this is a dangerous assumption for several reasons:
 
 ### 1. The Clock Drift Scenarios
@@ -42,11 +44,14 @@ Consensus-based locks solve these issues by using **logical time** and **fencing
 2.  **Leader Coordination**: By electing a leader node, we avoid the "Live Lock" scenario where two clients grab partial quorums. The leader handles all requests sequentially, ensuring that only one proposal is active for a specific lock at a time.
 3.  **Fencing Tokens (The GC fix)**: This is the most critical part. Even if a client pauses for 100 years, when it wakes up, it presents its "Fencing Token". The storage system (e.g., a database or file system) checks its own record of the "last successful token". If the client's token is older, the write is rejected regardless of the client's local "lock ownership" belief.
 
-### Core Components
+> [!IMPORTANT]
+> **Redis and Fencing Tokens**: Redis does not have a native way to generate monotonically increasing fencing tokens or to automatically validate them upon write. While algorithms like Redlock provide a lock, they do not provide the safety of a fencing token. This is why a leader-based consensus system (which can issue and track these tokens) is required for strict safety.
 
-1.  **Paxos Cluster**: A group of nodes (5 in this demo) that must reach a quorum (3/5) to agree on who owns the lock.
-2.  **Fencing Tokens**: Every time a lock is acquired, the cluster issues a new token with a higher sequence number than any previous token.
-3.  **Storage Validation**: The storage system (or database) must only accept writes if the client provides a token that is *greater* than the last successful write's token.
+### Core Components (Consolidated in PaxosDemo.java)
+
+1.  **Paxos Cluster**: A group of nodes (simulated as `Node` objects) that must reach a quorum (3/5) to agree on who owns the lock.
+2.  **Fencing Tokens**: Every time a lock is acquired, the cluster calculates a new token (monotonically increasing) issued to the holder.
+3.  **Storage Validation**: A simulated storage class that rejects any write with a token that isn't strictly greater than the last processed token.
 
 ### Monotonic Fencing in Action
 
@@ -78,6 +83,31 @@ docker compose --profile paxos up --build
 ```
 
 The demo simulates a scenario where Client A acquires a lock, experiences a "pause", Client B takes over the lock with a higher token, and Client A's subsequent "stale" write is safely rejected by the storage system.
+
+## Network Tolerance & Partitioning
+
+The `PaxosDemo` implementation offers significantly better safety and reliability in a production data center environment for two main reasons:
+
+### 1. Simplified Network Topography
+In Redlock, the client acts as the coordinator across 5 different Redis nodes. This means a network glitch between the **client and any node** can lead to partial locks or timeouts.
+In our Paxos prototype, the consensus cluster is hosted in the **data center (server-side)**.
+- **Low Latency**: Inter-node communication within a data center is extremely fast and reliable.
+- **Client Independence**: The client only needs to reach the cluster (or a leader); it doesn't have to worry about individual node connectivity.
+
+### 2. Handling Network Partitions (The 3/5 Quorum)
+Paxos is designed to handle partitions gracefully. If the network splits, the side with the **majority (quorum)** can continue, while the minority side automatically freezes to prevent split-brain.
+
+**Example: Network Partition (3 vs 2)**
+- **Nodes A, B, C** can see each other.
+- **Nodes D, E** are isolated.
+- **Client 1** talks to the A-B-C group: Consensus is reached (3/5), lock is issued.
+- **Client 2** talks to the D-E group: Cannot reach a quorum (2/5 < 3). **No lock is issued.**
+- **Result**: Safety is guaranteed even if 40% of your network is down.
+
+### 3. Native Fencing Token Generation
+Unlike plain Redis, which only manages keys and expirations, the `PaxosDemo` generates **monotonically increasing fencing tokens** as a core part of the protocol.
+- Every successful "Accept" phase increments the sequence number.
+- This token is the ultimate source of truth for the storage system, rendering physical clock drift irrelevant.
 
 ### Key Observation
 Notice that even if the clocks on the nodes were completely out of sync, the **sequence number** (fencing token) ensures that only the current valid lock holder can modify the system state.
