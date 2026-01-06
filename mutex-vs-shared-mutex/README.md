@@ -40,3 +40,25 @@ As of 2026, the guidance for high-performance C++ remains consistent:
     - You have measured significant contention and verified that parallel reads actually improve your throughput.
 
 Usually a simple benchmark regarding the time and CPU cycles spent will help you make an informed decision.
+
+## 🚀 Running the Benchmark
+
+We use Docker to ensure a consistent build environment with all necessary dependencies (CMake, Google Benchmark, C++17 compiler).
+
+### Prerequisites
+- [Docker](https://www.docker.com/)
+- [Docker Compose](https://docs.docker.com/compose/)
+
+### Execution
+Simply run:
+```bash
+docker compose up --build
+```
+
+### What to Look For
+In the output, you will see a comparison of:
+1. `BM_Mutex_SmallCriticalSection`: Standard exclusive `std::mutex`.
+2. `BM_SharedMutex_Read_Small`: Reader-writer `std::shared_mutex` for a read operation.
+3. `BM_SharedMutex_Write_Small`: Reader-writer `std::shared_mutex` for a write operation.
+
+Compare the `ns/op` (nanoseconds per operation). For very small operations, the **"Lock Tax"** of `shared_mutex` (tracking reader counts and writer queues) usually makes it significantly slower than a simple binary `mutex`.
