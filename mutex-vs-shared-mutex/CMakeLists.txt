@@ -13,6 +13,11 @@ FetchContent_Declare(
   GIT_TAG        v1.8.3
 )
 
+# Disable Google Test and Benchmark's own tests to avoid dependency issues
+set(BENCHMARK_ENABLE_GTEST OFF CACHE BOOL "Disable Google Test" FORCE)
+set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "Disable Benchmark Testing" FORCE)
+set(BENCHMARK_ENABLE_INSTALL OFF CACHE BOOL "Disable Benchmark Install" FORCE)
+
 FetchContent_MakeAvailable(google_benchmark)
 
 # Executable targeting our main file
@@ -20,6 +25,3 @@ add_executable(mutex_benchmark main.cpp)
 
 # Link to Google Benchmark
 target_link_libraries(mutex_benchmark PRIVATE benchmark::benchmark)
-
-# Disable Google Test if Benchmark tries to include it
-set(BENCHMARK_ENABLE_GTEST OFF CACHE BOOL "Disable Google Test" FORCE)
