@@ -11,14 +11,14 @@ static std::shared_mutex sm;
  * Benchmark for std::mutex (Exclusive)
  * Simulates a small increment operation.
  */
-static void BM_Mutex_SmallCriticalSection(benchmark::State &state) {
+static void BM_Mutex_Write_Small(benchmark::State &state) {
   for (auto _ : state) {
     std::lock_guard<std::mutex> lock(m);
     shared_data++;
     benchmark::DoNotOptimize(shared_data);
   }
 }
-BENCHMARK(BM_Mutex_SmallCriticalSection)
+BENCHMARK(BM_Mutex_Write_Small)
     ->Threads(2)
     ->Threads(6)
     ->Threads(12)
@@ -37,6 +37,24 @@ static void BM_SharedMutex_Write_Small(benchmark::State &state) {
   }
 }
 BENCHMARK(BM_SharedMutex_Write_Small)
+    ->Threads(2)
+    ->Threads(6)
+    ->Threads(12)
+    ->Threads(32)
+    ->Threads(64);
+
+/**
+ * Benchmark for std::shared_mutex (Shared Read)
+ * Simulates a small read operation.
+ */
+static void BM_Mutex_Read_Small(benchmark::State &state) {
+  for (auto _ : state) {
+    std::lock_guard<std::mutex> lock(m);
+    int val = shared_data;
+    benchmark::DoNotOptimize(val);
+  }
+}
+BENCHMARK(BM_Mutex_Read_Small)
     ->Threads(2)
     ->Threads(6)
     ->Threads(12)
