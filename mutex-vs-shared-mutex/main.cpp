@@ -1,24 +1,22 @@
+#include "absl/synchronization/mutex.h"
 #include <benchmark/benchmark.h>
-#include <mutex>
-#include <shared_mutex>
 
 // Shared resource for benchmarking
 static int shared_data = 0;
-static std::mutex m;
-static std::shared_mutex sm;
+static absl::Mutex mu;
 
 /**
- * Benchmark for std::mutex (Exclusive)
- * Simulates a small increment operation.
+ * Benchmark for absl::Mutex (Exclusive Lock for Read)
+ * Simulates a small read using an exclusive lock.
  */
-static void BM_Mutex_Write_Small(benchmark::State &state) {
+static void BM_AbslMutex_Read_Exclusive(benchmark::State &state) {
   for (auto _ : state) {
-    std::lock_guard<std::mutex> lock(m);
-    shared_data++;
-    benchmark::DoNotOptimize(shared_data);
+    absl::MutexLock lock(&mu);
+    int val = shared_data;
+    benchmark::DoNotOptimize(val);
   }
 }
-BENCHMARK(BM_Mutex_Write_Small)
+BENCHMARK(BM_AbslMutex_Read_Exclusive)
     ->Threads(2)
     ->Threads(6)
     ->Threads(12)
@@ -26,17 +24,17 @@ BENCHMARK(BM_Mutex_Write_Small)
     ->Threads(64);
 
 /**
- * Benchmark for std::shared_mutex (Exclusive Write)
- * Simulates a small increment operation.
+ * Benchmark for absl::Mutex (Shared/Reader Lock for Read)
+ * Simulates a small read using a reader lock.
  */
-static void BM_SharedMutex_Write_Small(benchmark::State &state) {
+static void BM_AbslMutex_Read_Shared(benchmark::State &state) {
   for (auto _ : state) {
-    std::unique_lock<std::shared_mutex> lock(sm);
-    shared_data++;
-    benchmark::DoNotOptimize(shared_data);
+    absl::ReaderMutexLock lock(&mu);
+    int val = shared_data;
+    benchmark::DoNotOptimize(val);
   }
 }
-BENCHMARK(BM_SharedMutex_Write_Small)
+BENCHMARK(BM_AbslMutex_Read_Shared)
     ->Threads(2)
     ->Threads(6)
     ->Threads(12)
