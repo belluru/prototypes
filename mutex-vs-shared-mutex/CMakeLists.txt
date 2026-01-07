@@ -36,6 +36,5 @@ add_executable(mutex_benchmark main.cpp)
 # Link to Google Benchmark and Abseil
 target_link_libraries(mutex_benchmark PRIVATE 
     benchmark::benchmark
-    absl::mutex
     absl::synchronization
 )
