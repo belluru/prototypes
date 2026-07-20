@@ -1,0 +1,9 @@
+microservices-playground/
+├── circuit-breaker/          # Resilience patterns (Hystrix-style)
+├── service-mesh/             # Service-to-service communication, retries, timeouts
+├── saga-pattern/             # Distributed transactions (orchestration vs. choreography)
+├── event-sourcing/           # Event log as source of truth
+├── api-gateway/              # Request routing, auth, rate limiting
+├── cache-patterns/           # Caching strategies (Cache-Aside, Write-Through)
+├── docs/                     # Architecture guides
+└── docker-compose.yml        # Multi-service orchestration
