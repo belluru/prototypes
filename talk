@@ -1,0 +1,101 @@
+{
+  "copilot": {
+    "codingAgent": {
+      "name": "prototypes-agent",
+      "description": "Distributed locks prototype coding agent with enhanced talk capabilities",
+      "private": true,
+      "enabled": true,
+      "version": "1.0.0",
+      "capabilities": {
+        "codeGeneration": true,
+        "codeReview": true,
+        "testing": true,
+        "documentation": true,
+        "debugging": true,
+        "architectureAnalysis": true,
+        "performanceTuning": true
+      },
+      "permissions": {
+        "readRepository": true,
+        "writeRepository": true,
+        "createPullRequests": true,
+        "createIssues": true,
+        "manageBranches": false,
+        "deleteContent": false
+      },
+      "talk": {
+        "enabled": true,
+        "private": true,
+        "features": {
+          "conversationHistory": true,
+          "contextAwareness": true,
+          "multiTurn": true,
+          "codeContext": true,
+          "gitContext": true
+        },
+        "parameters": {
+          "maxConversationLength": 50,
+          "maxTokens": 4096,
+          "temperature": 0.7,
+          "topP": 0.95,
+          "frequencyPenalty": 0.0,
+          "presencePenalty": 0.0
+        },
+        "model": "gpt-4-turbo",
+        "systemPrompt": "You are an expert coding assistant specialized in distributed systems, Redis-based locks, and Java development. Provide clear, actionable guidance for the prototypes repository focusing on distributed lock patterns and implementation best practices.",
+        "responseFormat": "markdown",
+        "codeBlockHighlighting": true
+      },
+      "repositories": [
+        {
+          "owner": "filforopen-source",
+          "name": "prototypes",
+          "branch": "main",
+          "access": "full",
+          "autoSync": true
+        }
+      ],
+      "mcpServers": {
+        "github": {
+          "enabled": true,
+          "permissions": ["read", "write", "admin"],
+          "rateLimit": 5000
+        },
+        "filesystem": {
+          "enabled": true,
+          "permissions": ["read", "write"],
+          "maxDepth": 10
+        },
+        "git": {
+          "enabled": true,
+          "permissions": ["read", "history"],
+          "historyLimit": 100
+        },
+        "redis": {
+          "enabled": true,
+          "permissions": ["read", "write", "debug"],
+          "connection": "redis://localhost:6379"
+        },
+        "java": {
+          "enabled": true,
+          "permissions": ["read", "analyze"],
+          "version": "11+"
+        }
+      },
+      "securitySettings": {
+        "enforceSignedCommits": false,
+        "requireCodeReview": false,
+        "allowPublicSharing": false,
+        "dataRetention": "30days",
+        "encryptionEnabled": true,
+        "ipWhitelist": []
+      },
+      "advancedSettings": {
+        "contextWindow": "adaptive",
+        "cacheResponses": true,
+        "parallelProcessing": true,
+        "fallbackModel": "gpt-4"
+      }
+    }
+  }
+}
