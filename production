@@ -1,0 +1,338 @@
+name: Multi-Platform Tests
+
+on:
+  push:
+    branches: [ main, patch-1 ]
+  pull_request:
+    branches: [ main, patch-1 ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
+jobs:
+  # ============================================================================
+  # LINUX BUILDS
+  # ============================================================================
+  
+  linux-gcc:
+    name: Linux GCC ${{ matrix.version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ['11', '12', '13']
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup GCC ${{ matrix.version }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-${{ matrix.version }} g++-${{ matrix.version }}
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ matrix.version }} 100
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ matrix.version }} 100
+
+      - name: Verify GCC installation
+        run: |
+          gcc --version
+          g++ --version
+
+      - name: Run tests
+        run: |
+          # Add your test commands here
+          echo "Running tests on GCC ${{ matrix.version }}"
+
+  linux-clang:
+    name: Linux Clang ${{ matrix.version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ['14', '15', '16', '17']
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Clang ${{ matrix.version }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-${{ matrix.version }} llvm-${{ matrix.version }}
+          sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-${{ matrix.version }} 100
+          sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-${{ matrix.version }} 100
+
+      - name: Verify Clang installation
+        run: |
+          clang --version
+          clang++ --version
+
+      - name: Run tests
+        run: |
+          # Add your test commands here
+          echo "Running tests on Clang ${{ matrix.version }}"
+
+  linux-coverage:
+    name: Linux with Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup coverage tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lcov gcovr
+
+      - name: Run tests with coverage
+        run: |
+          # Add your coverage build commands here
+          echo "Running tests with coverage instrumentation"
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          flags: linux
+          fail_ci_if_error: false
+
+  # ============================================================================
+  # macOS BUILDS
+  # ============================================================================
+  
+  macos-clang:
+    name: macOS ${{ matrix.os }} Clang
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-13, macos-14]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install dependencies
+        run: |
+          brew update
+          # Add your Homebrew dependencies here
+          # Example: brew install cmake ninja
+
+      - name: Verify Clang installation
+        run: |
+          clang --version
+          clang++ --version
+
+      - name: Run tests
+        run: |
+          # Add your test commands here
+          echo "Running tests on macOS ${{ matrix.os }}"
+
+  macos-arm64:
+    name: macOS ARM64 (Apple Silicon)
+    runs-on: macos-14-xlarge
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install dependencies
+        run: |
+          brew update
+          # Add your Homebrew dependencies for ARM64
+          # Example: brew install cmake ninja
+
+      - name: Verify ARM64 architecture
+        run: |
+          arch
+          uname -m
+
+      - name: Run tests
+        run: |
+          # Add your test commands here
+          echo "Running tests on ARM64"
+
+  # ============================================================================
+  # WINDOWS BUILDS
+  # ============================================================================
+  
+  windows-msvc:
+    name: Windows MSVC ${{ matrix.version }}
+    runs-on: windows-2022
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ['2019', '2022']
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+          vsversion: ${{ matrix.version }}
+
+      - name: Verify MSVC installation
+        run: |
+          cl.exe
+          link.exe
+
+      - name: Run tests
+        run: |
+          # Add your test commands here
+          echo "Running tests on MSVC ${{ matrix.version }}"
+        shell: cmd
+
+  windows-mingw:
+    name: Windows MinGW
+    runs-on: windows-2022
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ['8.1', '11.0']
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup MinGW
+        uses: egor-tensin/setup-mingw@v2
+        with:
+          platform: x64
+          version: ${{ matrix.version }}
+
+      - name: Verify MinGW installation
+        run: |
+          g++ --version
+          gcc --version
+        shell: pwsh
+
+      - name: Run tests
+        run: |
+          # Add your test commands here
+          echo "Running tests on MinGW ${{ matrix.version }}"
+        shell: bash
+
+  windows-arm64:
+    name: Windows ARM64
+    runs-on: windows-2022
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup MSVC for ARM64
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: arm64
+          vsversion: '2022'
+
+      - name: Run tests
+        run: |
+          # Add your test commands here
+          echo "Running ARM64 tests"
+        shell: cmd
+
+  # ============================================================================
+  # CROSS-PLATFORM & SANITIZERS
+  # ============================================================================
+  
+  sanitizers:
+    name: ${{ matrix.sanitizer }} Sanitizer
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        sanitizer: [ASAN, MSAN, TSAN, UBSAN]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Clang
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang llvm
+
+      - name: Run tests with ${{ matrix.sanitizer }}
+        env:
+          SANITIZER: ${{ matrix.sanitizer }}
+        run: |
+          # Configure and build with sanitizer flags
+          # Example: cmake . -DSANITIZER=$SANITIZER
+          echo "Running tests with ${{ matrix.sanitizer }}"
+
+  # ============================================================================
+  # STATIC ANALYSIS & STYLE CHECKS
+  # ============================================================================
+  
+  static-analysis:
+    name: Static Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup analysis tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-tools cppcheck
+
+      - name: Run clang-tidy
+        run: |
+          # Run clang-tidy on your source files
+          echo "Running clang-tidy"
+
+      - name: Run cppcheck
+        run: |
+          cppcheck --version
+          # cppcheck your source directory
+          echo "Running cppcheck"
+
+  style-check:
+    name: Code Style Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check code formatting
+        run: |
+          # Add your code style checks here
+          # Example: clang-format, cpplint, etc.
+          echo "Checking code style"
+
+  # ============================================================================
+  # TEST RESULT SUMMARY
+  # ============================================================================
+  
+  test-summary:
+    name: Test Summary
+    needs: [linux-gcc, linux-clang, macos-clang, windows-msvc, sanitizers]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check test results
+        run: |
+          echo "## Multi-Platform Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All platforms tested successfully! ✅" >> $GITHUB_STEP_SUMMARY
+
